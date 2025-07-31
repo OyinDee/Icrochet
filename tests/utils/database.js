@@ -13,10 +13,7 @@ async function connectDB() {
     const mongoUri = mongoServer.getUri();
 
     // Connect to the in-memory database
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoUri);
 
     console.log('Connected to in-memory MongoDB for testing');
   } catch (error) {

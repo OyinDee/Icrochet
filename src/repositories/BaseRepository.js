@@ -262,6 +262,20 @@ class BaseRepository {
   }
 
   /**
+   * Execute aggregation pipeline
+   * @param {Array} pipeline - Aggregation pipeline
+   * @returns {Promise<Array>} Aggregation results
+   */
+  async aggregate(pipeline) {
+    try {
+      return await this.model.aggregate(pipeline);
+    } catch (error) {
+      logger.error(`Error executing aggregation on ${this.model.modelName}:`, error);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
    * Handle database errors and convert to application errors
    * @param {Error} error - Database error
    * @returns {Error} Application error

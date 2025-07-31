@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const BaseRepository = require('../../../src/repositories/BaseRepository');
+const database = require('../../../src/config/database');
 
 // Create a test model for testing
 const testSchema = new mongoose.Schema({
@@ -16,6 +17,11 @@ describe('BaseRepository', () => {
   let repository;
   let testDocument;
 
+  beforeAll(async () => {
+    // Connect to test database
+    await database.connect();
+  }, 30000);
+
   beforeEach(async () => {
     repository = new BaseRepository(TestModel);
     
@@ -25,12 +31,12 @@ describe('BaseRepository', () => {
       email: 'test@example.com',
       age: 25
     });
-  });
+  }, 10000);
 
   afterEach(async () => {
     // Clean up test data
     await TestModel.deleteMany({});
-  });
+  }, 10000);
 
   describe('constructor', () => {
     it('should create repository with model', () => {

@@ -337,7 +337,7 @@ const publicItemValidation = {
 
   getItemsByColor: Joi.object({
     params: Joi.object({
-      color: Joi.string().trim().min(1).max(50).required()
+      color: Joi.string().trim().min(2).max(50).required()
     }),
     query: Joi.object({
       page: Joi.number().integer().min(1).default(1),

@@ -23,14 +23,17 @@ class EmailService {
         },
       });
 
-      // Verify connection configuration
-      this.transporter.verify((error, success) => {
-        if (error) {
-          logger.error('Email transporter verification failed:', error);
-        } else {
-          logger.info('Email transporter is ready to send messages');
-        }
-      });
+      // Only verify connection in non-test environments
+      if (process.env.NODE_ENV !== 'test') {
+        // Verify connection configuration
+        this.transporter.verify((error, success) => {
+          if (error) {
+            logger.error('Email transporter verification failed:', error);
+          } else {
+            logger.info('Email transporter is ready to send messages');
+          }
+        });
+      }
     } catch (error) {
       logger.error('Failed to initialize email transporter:', error);
       throw error;

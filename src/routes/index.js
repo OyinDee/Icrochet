@@ -9,6 +9,8 @@ const adminConversationRoutes = require('./adminConversations');
 const adminUploadRoutes = require('./adminUpload');
 const adminEmailRoutes = require('./adminEmails');
 const publicItemRoutes = require('./publicItems');
+const publicOrderRoutes = require('./publicOrders');
+const publicConversationRoutes = require('./publicConversations');
 
 const router = express.Router();
 
@@ -22,8 +24,9 @@ const router = express.Router();
  * /api/v1/admin/orders/*   - Admin order management routes
  * /api/v1/admin/conversations/* - Admin conversation routes
  * /api/v1/admin/emails/*   - Admin email management routes
- * /api/v1/public/items/*   - Public item browsing routes (to be added)
- * /api/v1/public/orders/*  - Public order placement routes (to be added)
+ * /api/v1/public/items/*   - Public item browsing routes
+ * /api/v1/public/orders/*  - Public order placement routes
+ * /api/v1/public/conversations/* - Public conversation routes
  */
 
 // Admin routes
@@ -37,6 +40,8 @@ router.use('/admin/emails', adminEmailRoutes);
 
 // Public routes
 router.use('/public/items', publicItemRoutes);
+router.use('/public/orders', publicOrderRoutes);
+router.use('/public/conversations', publicConversationRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -73,7 +78,8 @@ router.get('/info', (req, res) => {
         },
         public: {
           items: '/api/v1/public/items',
-          orders: '/api/v1/public/orders'
+          orders: '/api/v1/public/orders',
+          conversations: '/api/v1/public/conversations'
         },
         utility: {
           health: '/api/v1/health',

@@ -98,15 +98,7 @@ class PublicItemController {
       logger.debug('Public getting items by category:', categoryId);
 
       const options = this.buildOptions(req.query);
-      const result = await this.itemService.getItemsByCategory(categoryId, options);
-
-      // Filter out unavailable items from the result if any
-      if (result && result.data) {
-        result.data = result.data.filter(item => item.isAvailable);
-        if (result.pagination) {
-          result.pagination.totalCount = result.data.length;
-        }
-      }
+      const result = await this.itemService.getItemsByCategory(categoryId, options, false, true);
 
       res.status(200).json({
         success: true,
@@ -130,28 +122,21 @@ class PublicItemController {
       const { q: searchTerm } = req.query;
       logger.debug('Public searching items:', searchTerm);
 
+      // Validate search term
       if (!searchTerm || searchTerm.trim().length === 0) {
         return res.status(400).json({
           success: false,
           error: {
-            code: 'MISSING_SEARCH_TERM',
+            code: 'VALIDATION_ERROR',
             message: 'Search term is required',
-            details: {}
+            details: { q: 'Search term cannot be empty' }
           },
           timestamp: new Date().toISOString()
         });
       }
 
       const options = this.buildOptions(req.query);
-      const result = await this.itemService.searchItems(searchTerm, options);
-
-      // Filter out unavailable items from the result if any
-      if (result && result.data) {
-        result.data = result.data.filter(item => item.isAvailable);
-        if (result.pagination) {
-          result.pagination.totalCount = result.data.length;
-        }
-      }
+      const result = await this.itemService.searchItems(searchTerm, options, true);
 
       res.status(200).json({
         success: true,
@@ -176,15 +161,7 @@ class PublicItemController {
       logger.debug('Public getting items by pricing type:', pricingType);
 
       const options = this.buildOptions(req.query);
-      const result = await this.itemService.getItemsByPricingType(pricingType, options);
-
-      // Filter out unavailable items from the result if any
-      if (result && result.data) {
-        result.data = result.data.filter(item => item.isAvailable);
-        if (result.pagination) {
-          result.pagination.totalCount = result.data.length;
-        }
-      }
+      const result = await this.itemService.getItemsByPricingType(pricingType, options, true);
 
       res.status(200).json({
         success: true,
@@ -208,16 +185,21 @@ class PublicItemController {
       const { color } = req.params;
       logger.debug('Public getting items by color:', color);
 
-      const options = this.buildOptions(req.query);
-      const result = await this.itemService.getItemsByColor(color, options);
-
-      // Filter out unavailable items from the result if any
-      if (result && result.data) {
-        result.data = result.data.filter(item => item.isAvailable);
-        if (result.pagination) {
-          result.pagination.totalCount = result.data.length;
-        }
+      // Validate color parameter
+      if (!color || color.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Color parameter must be at least 2 characters long',
+            details: { color: 'Color parameter must be at least 2 characters long' }
+          },
+          timestamp: new Date().toISOString()
+        });
       }
+
+      const options = this.buildOptions(req.query);
+      const result = await this.itemService.getItemsByColor(color, options, true);
 
       res.status(200).json({
         success: true,
@@ -282,6 +264,16 @@ class PublicItemController {
       filters.maxPrice = parseFloat(query.maxPrice);
     }
 
+    // Validate price range
+    if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+      if (filters.minPrice >= filters.maxPrice) {
+        const error = new Error('minPrice must be less than maxPrice');
+        error.code = 'VALIDATION_ERROR';
+        error.details = { priceRange: 'minPrice must be less than maxPrice' };
+        throw error;
+      }
+    }
+
     return filters;
   }
 
@@ -294,11 +286,31 @@ class PublicItemController {
     const options = {};
 
     if (query.page) {
-      options.page = parseInt(query.page);
+      const page = parseInt(query.page);
+      if (page < 1) {
+        const error = new Error('Page must be greater than 0');
+        error.code = 'VALIDATION_ERROR';
+        error.details = { page: 'Page must be greater than 0' };
+        throw error;
+      }
+      options.page = page;
     }
 
     if (query.limit) {
-      options.limit = Math.min(parseInt(query.limit), 50); // Limit max items per page for public
+      const limit = parseInt(query.limit);
+      if (limit < 1) {
+        const error = new Error('Limit must be greater than 0');
+        error.code = 'VALIDATION_ERROR';
+        error.details = { limit: 'Limit must be greater than 0' };
+        throw error;
+      }
+      if (limit > 50) {
+        const error = new Error('Limit cannot exceed 50');
+        error.code = 'VALIDATION_ERROR';
+        error.details = { limit: 'Limit cannot exceed 50' };
+        throw error;
+      }
+      options.limit = limit;
     }
 
     if (query.sortBy) {
@@ -322,10 +334,16 @@ class PublicItemController {
   handleError(res, error, code, message) {
     const statusCode = this.getStatusCodeFromError(error);
     
+    // Normalize certain error codes to VALIDATION_ERROR for consistency
+    let errorCode = error.code || code;
+    if (['INVALID_ID', 'INVALID_PRICING_TYPE'].includes(errorCode) && statusCode === 400) {
+      errorCode = 'VALIDATION_ERROR';
+    }
+    
     res.status(statusCode).json({
       success: false,
       error: {
-        code: error.code || code,
+        code: errorCode,
         message: error.message || message,
         details: error.details || {}
       },
@@ -345,6 +363,8 @@ class PublicItemController {
         return 404;
       case 'INVALID_PRICING_TYPE':
       case 'MISSING_SEARCH_TERM':
+      case 'VALIDATION_ERROR':
+      case 'INVALID_ID':
         return 400;
       default:
         return 500;

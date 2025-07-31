@@ -114,8 +114,17 @@ itemSchema.virtual('priceDisplay').get(function() {
   }
 });
 
-// Ensure virtual fields are serialized
-itemSchema.set('toJSON', { virtuals: true });
+// Ensure virtual fields are serialized and price field is included
+itemSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret) {
+    // Ensure price field is always included
+    if (ret.price === undefined) {
+      ret.price = doc.price || {};
+    }
+    return ret;
+  }
+});
 itemSchema.set('toObject', { virtuals: true });
 
 // Indexes for faster queries

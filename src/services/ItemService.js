@@ -175,16 +175,26 @@ class ItemService {
    * Get items by category
    * @param {string} categoryId - Category ID
    * @param {Object} options - Query options
+   * @param {boolean} validateCategory - Whether to validate category exists (default: true)
+   * @param {boolean} availableOnly - Whether to return only available items (default: false)
    * @returns {Promise<Object>} Items in category
    */
-  async getItemsByCategory(categoryId, options = {}) {
+  async getItemsByCategory(categoryId, options = {}, validateCategory = true, availableOnly = false) {
     try {
       logger.debug('Getting items by category:', categoryId);
 
-      // Validate category exists
-      await this.validateCategory(categoryId);
+      // Validate category exists only if requested (skip for public API)
+      if (validateCategory) {
+        await this.validateCategory(categoryId);
+      }
 
-      const result = await this.itemRepository.findByCategory(categoryId, options);
+      let result;
+      if (availableOnly) {
+        result = await this.itemRepository.findAvailable({ categoryId }, options);
+      } else {
+        result = await this.itemRepository.findByCategory(categoryId, options);
+      }
+      
       const transformedResult = this.transformResult(result);
       
       logger.info(`Retrieved ${transformedResult.data.length} items for category ${categoryId}`);
@@ -199,13 +209,14 @@ class ItemService {
    * Search items
    * @param {string} searchTerm - Search term
    * @param {Object} options - Search options
+   * @param {boolean} availableOnly - Whether to return only available items (default: false)
    * @returns {Promise<Object>} Search results
    */
-  async searchItems(searchTerm, options = {}) {
+  async searchItems(searchTerm, options = {}, availableOnly = false) {
     try {
       logger.debug('Searching items:', searchTerm);
 
-      const result = await this.itemRepository.search(searchTerm, options);
+      const result = await this.itemRepository.search(searchTerm, options, availableOnly);
       const transformedResult = this.transformResult(result);
       
       logger.info(`Found ${transformedResult.data.length} items matching search term`);
@@ -241,15 +252,22 @@ class ItemService {
    * Get items by pricing type
    * @param {string} pricingType - Pricing type (fixed, range, custom)
    * @param {Object} options - Query options
+   * @param {boolean} availableOnly - Whether to return only available items (default: false)
    * @returns {Promise<Object>} Items with specified pricing type
    */
-  async getItemsByPricingType(pricingType, options = {}) {
+  async getItemsByPricingType(pricingType, options = {}, availableOnly = false) {
     try {
       logger.debug('Getting items by pricing type:', pricingType);
 
       this.validatePricingType(pricingType);
 
-      const result = await this.itemRepository.findByPricingType(pricingType, options);
+      let result;
+      if (availableOnly) {
+        result = await this.itemRepository.findAvailable({ pricingType }, options);
+      } else {
+        result = await this.itemRepository.findByPricingType(pricingType, options);
+      }
+      
       const transformedResult = this.transformResult(result);
       
       logger.info(`Retrieved ${transformedResult.data.length} items with ${pricingType} pricing`);
@@ -287,13 +305,20 @@ class ItemService {
    * Get items by color
    * @param {string} color - Color name
    * @param {Object} options - Query options
+   * @param {boolean} availableOnly - Whether to return only available items (default: false)
    * @returns {Promise<Object>} Items with specified color
    */
-  async getItemsByColor(color, options = {}) {
+  async getItemsByColor(color, options = {}, availableOnly = false) {
     try {
       logger.debug('Getting items by color:', color);
 
-      const result = await this.itemRepository.findByColor(color, options);
+      let result;
+      if (availableOnly) {
+        result = await this.itemRepository.findAvailable({ availableColors: { $regex: new RegExp(color, 'i') } }, options);
+      } else {
+        result = await this.itemRepository.findByColor(color, options);
+      }
+      
       const transformedResult = this.transformResult(result);
       
       logger.info(`Retrieved ${transformedResult.data.length} items with color ${color}`);

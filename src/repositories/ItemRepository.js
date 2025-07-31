@@ -114,14 +114,16 @@ class ItemRepository extends BaseRepository {
    * Search items by name, description, or category
    * @param {string} searchTerm - Search term
    * @param {Object} options - Search options
+   * @param {boolean} availableOnly - Whether to return only available items (default: false)
    * @returns {Promise<Object>} Search results with pagination
    */
-  async search(searchTerm, options = {}) {
+  async search(searchTerm, options = {}, availableOnly = false) {
     try {
       logger.debug('Searching items:', searchTerm);
       
       if (!searchTerm || searchTerm.trim().length === 0) {
-        return await this.findWithCategory({}, options);
+        const baseCriteria = availableOnly ? { isAvailable: true } : {};
+        return await this.findWithCategory(baseCriteria, options);
       }
 
       const searchRegex = new RegExp(searchTerm.trim(), 'i');
@@ -146,10 +148,15 @@ class ItemRepository extends BaseRepository {
         ]
       };
 
+      // Add availability filter if requested
+      if (availableOnly) {
+        criteria.isAvailable = true;
+      }
+
       return await this.findWithCategory(criteria, options);
     } catch (error) {
       logger.error('Error searching items:', error);
-      this.handleError(error);
+      throw this._handleError(error);
     }
   }
 
@@ -184,7 +191,7 @@ class ItemRepository extends BaseRepository {
       return await this.findWithCategory(criteria, options);
     } catch (error) {
       logger.error('Error finding items by price range:', error);
-      this.handleError(error);
+      throw this._handleError(error);
     }
   }
 
@@ -205,7 +212,7 @@ class ItemRepository extends BaseRepository {
       return await this.findWithCategory(criteria, options);
     } catch (error) {
       logger.error('Error finding items by color:', error);
-      this.handleError(error);
+      throw this._handleError(error);
     }
   }
 
@@ -291,7 +298,7 @@ class ItemRepository extends BaseRepository {
       };
     } catch (error) {
       logger.error('Error getting item statistics:', error);
-      this.handleError(error);
+      throw this._handleError(error);
     }
   }
 
@@ -304,6 +311,7 @@ class ItemRepository extends BaseRepository {
       logger.debug('Getting all unique colors');
       
       const pipeline = [
+        { $match: { isAvailable: true } }, // Only include available items
         { $unwind: '$availableColors' },
         {
           $group: {
@@ -325,7 +333,7 @@ class ItemRepository extends BaseRepository {
       return await this.aggregate(pipeline);
     } catch (error) {
       logger.error('Error getting all colors:', error);
-      this.handleError(error);
+      throw this._handleError(error);
     }
   }
 
@@ -367,7 +375,7 @@ class ItemRepository extends BaseRepository {
       };
     } catch (error) {
       logger.error('Error validating color:', error);
-      this.handleError(error);
+      this._handleError(error);
     }
   }
 
@@ -411,7 +419,7 @@ class ItemRepository extends BaseRepository {
       return priceInfo;
     } catch (error) {
       logger.error('Error getting price info:', error);
-      this.handleError(error);
+      this._handleError(error);
     }
   }
 
@@ -428,7 +436,7 @@ class ItemRepository extends BaseRepository {
       return await this.updateById(itemId, { isAvailable });
     } catch (error) {
       logger.error('Error updating item availability:', error);
-      this.handleError(error);
+      this._handleError(error);
     }
   }
 
@@ -445,7 +453,7 @@ class ItemRepository extends BaseRepository {
       return await this.findWithCategory(criteria, options);
     } catch (error) {
       logger.error('Error finding items needing restock:', error);
-      this.handleError(error);
+      this._handleError(error);
     }
   }
 
@@ -510,7 +518,7 @@ class ItemRepository extends BaseRepository {
       return result || null;
     } catch (error) {
       logger.error('Error getting category items with stats:', error);
-      this.handleError(error);
+      this._handleError(error);
     }
   }
 }

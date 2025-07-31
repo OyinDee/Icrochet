@@ -127,11 +127,12 @@ class OrderRepository extends BaseRepository {
       
       // Validate items exist and are available
       const itemIds = orderData.items.map(item => item.itemId);
-      const items = await Item.find({ _id: { $in: itemIds } });
+      const uniqueItemIds = [...new Set(itemIds)]; // Remove duplicates for validation
+      const items = await Item.find({ _id: { $in: uniqueItemIds } });
       
-      if (items.length !== itemIds.length) {
+      if (items.length !== uniqueItemIds.length) {
         const foundIds = items.map(item => item._id.toString());
-        const missingIds = itemIds.filter(id => !foundIds.includes(id));
+        const missingIds = uniqueItemIds.filter(id => !foundIds.includes(id));
         const error = new Error(`Items not found: ${missingIds.join(', ')}`);
         error.code = 'ITEMS_NOT_FOUND';
         error.missingItems = missingIds;
@@ -172,6 +173,7 @@ class OrderRepository extends BaseRepository {
       let totalAmount = 0;
       let estimatedAmount = 0;
       let hasCustomItems = false;
+      let hasRangeItems = false;
 
       const processedItems = orderData.items.map(orderItem => {
         const item = items.find(i => i._id.toString() === orderItem.itemId);
@@ -185,6 +187,7 @@ class OrderRepository extends BaseRepository {
             estimatedAmount += processedItem.subtotal;
             break;
           case 'range':
+            hasRangeItems = true;
             // Use average of range for estimation
             const avgPrice = (item.price.min + item.price.max) / 2;
             processedItem.unitPrice = avgPrice;
@@ -205,7 +208,7 @@ class OrderRepository extends BaseRepository {
       const finalOrderData = {
         ...orderData,
         items: processedItems,
-        totalAmount: hasCustomItems ? null : totalAmount,
+        totalAmount: (hasCustomItems || hasRangeItems) ? null : totalAmount,
         estimatedAmount: estimatedAmount > 0 ? estimatedAmount : null,
         hasCustomItems,
         status: hasCustomItems ? 'quote_needed' : 'pending'
