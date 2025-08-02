@@ -59,6 +59,8 @@ router.get('/health', (req, res) => {
 
 // API info endpoint
 router.get('/info', (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
   res.status(200).json({
     success: true,
     message: 'Crochet Business API',
@@ -66,6 +68,7 @@ router.get('/info', (req, res) => {
       name: 'Crochet Business API',
       version: '1.0.0',
       description: 'API for ICrochet with custom orders, messaging, and flexible pricing',
+      documentation: `${baseUrl}/api-docs`,
       endpoints: {
         admin: {
           auth: '/api/v1/admin/auth',
@@ -85,6 +88,19 @@ router.get('/info', (req, res) => {
           health: '/api/v1/health',
           info: '/api/v1/info'
         }
+      },
+      features: [
+        'Flexible pricing (fixed, range, custom)',
+        'Real-time messaging with Socket.io',
+        'Image upload with Cloudinary',
+        'Email notifications',
+        'Order management',
+        'Category management',
+        'Admin authentication'
+      ],
+      contact: {
+        email: 'admin@crochetbusiness.com',
+        support: 'For API support, please contact the development team'
       }
     },
     timestamp: new Date().toISOString()

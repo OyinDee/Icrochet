@@ -2,11 +2,14 @@
 require('dotenv').config();
 
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const config = require('./config');
 const database = require('./config/database');
 const logger = require('./config/logger');
 const routes = require('./routes');
+const SocketService = require('./services/SocketService');
+const { specs, swaggerUi } = require('./config/swagger');
 
 /**
  * Express application setup
@@ -14,11 +17,14 @@ const routes = require('./routes');
 class App {
   constructor() {
     this.app = express();
+    this.server = http.createServer(this.app);
     this.port = config.port;
+    this.socketService = new SocketService();
     
     this.setupMiddleware();
     this.setupRoutes();
     this.setupErrorHandling();
+    this.setupSocketIO();
   }
 
   /**
@@ -62,6 +68,20 @@ class App {
    * Setup routes
    */
   setupRoutes() {
+    // Swagger documentation
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+      explorer: true,
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Crochet Business API Documentation',
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true
+      }
+    }));
+
     // API routes
     this.app.use('/api/v1', routes);
 
@@ -73,7 +93,8 @@ class App {
         data: {
           name: 'Crochet Business API',
           version: '1.0.0',
-          documentation: '/api/v1/info',
+          documentation: '/api-docs',
+          apiInfo: '/api/v1/info',
           health: '/api/v1/health'
         },
         timestamp: new Date().toISOString()
@@ -158,10 +179,12 @@ class App {
       await this.connectDatabase();
 
       // Start server
-      this.server = this.app.listen(this.port, () => {
+      this.server.listen(this.port, () => {
         logger.info(`Server running on port ${this.port}`);
         logger.info(`Environment: ${config.nodeEnv}`);
-        logger.info(`API Documentation: http://localhost:${this.port}/api/v1/info`);
+        logger.info(`API Documentation: http://localhost:${this.port}/api-docs`);
+        logger.info(`API Info: http://localhost:${this.port}/api/v1/info`);
+        logger.info(`Socket.io enabled for real-time messaging`);
       });
 
       // Graceful shutdown
@@ -170,6 +193,19 @@ class App {
     } catch (error) {
       logger.error('Failed to start server:', error);
       process.exit(1);
+    }
+  }
+
+  /**
+   * Setup Socket.io server
+   */
+  setupSocketIO() {
+    try {
+      this.socketService.initialize(this.server);
+      logger.info('Socket.io service initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize Socket.io service:', error);
+      throw error;
     }
   }
 
@@ -213,6 +249,20 @@ class App {
    */
   getApp() {
     return this.app;
+  }
+
+  /**
+   * Get HTTP server instance
+   */
+  getServer() {
+    return this.server;
+  }
+
+  /**
+   * Get Socket.io service instance
+   */
+  getSocketService() {
+    return this.socketService;
   }
 }
 
