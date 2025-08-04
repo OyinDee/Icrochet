@@ -7,8 +7,8 @@ const config = {
 
   // Database configuration
   mongodb: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/crochet-business',
-    testUri: process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/crochet-business-test',
+    uri: process.env.MONGODB_URI,
+    testUri: process.env.MONGODB_TEST_URI,
   },
 
   // JWT configuration
