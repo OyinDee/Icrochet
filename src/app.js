@@ -274,4 +274,5 @@ if (require.main === module) {
   appInstance.start();
 }
 
-module.exports = appInstance.getApp();
+const serverless = require('serverless-http');
+module.exports = serverless(appInstance.getApp());
