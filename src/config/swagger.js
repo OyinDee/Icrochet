@@ -23,7 +23,7 @@ const options = {
         description: 'Development server'
       },
       {
-        url: 'https://api.crochetbusiness.com/api/v1',
+        url: 'https://icrochet.vercel.app',
         description: 'Production server'
       }
     ],
@@ -545,18 +545,18 @@ const options = {
         LoginRequest: {
           type: 'object',
           properties: {
-            identifier: {
+            username: {
               type: 'string',
-              description: 'Username or email',
+              description: 'Admin username',
               example: 'admin'
             },
             password: {
               type: 'string',
-              minLength: 6,
+              minLength: 1,
               example: 'admin123'
             }
           },
-          required: ['identifier', 'password']
+          required: ['username', 'password']
         },
 
         // Login Response Schema

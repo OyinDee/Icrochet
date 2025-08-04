@@ -24,7 +24,7 @@ The Crochet Business API is a comprehensive Node.js REST API designed for managi
 ### Base URL
 ```
 Development: http://localhost:3000/api/v1
-Production: https://api.crochetbusiness.com/api/v1
+Production: https://icrochet.vercel.app
 ```
 
 ## Authentication

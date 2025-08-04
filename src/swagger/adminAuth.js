@@ -15,12 +15,7 @@
  *             username:
  *               summary: Login with username
  *               value:
- *                 identifier: "admin"
- *                 password: "admin123"
- *             email:
- *               summary: Login with email
- *               value:
- *                 identifier: "admin@crochetbusiness.com"
+ *                 username: "admin"
  *                 password: "admin123"
  *     responses:
  *       200:
