@@ -1,15 +1,15 @@
 {
     "version": 2,
-    "functions": {
-      "api/index.js": {
-        "runtime": "@vercel/node",
-        "handler": "src/config/index.js"
+    "builds": [
+      {
+        "src": "src/app.js",
+        "use": "@vercel/node"
       }
-    },
+    ],
     "routes": [
       {
         "src": "/(.*)",
-        "dest": "api/index.js"
+        "dest": "src/app.js"
       }
     ]
   }
